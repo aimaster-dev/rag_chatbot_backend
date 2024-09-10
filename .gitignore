@@ -1,0 +1,4 @@
+/ragenv
+/test.db
+/.env
+*/__pycache__
