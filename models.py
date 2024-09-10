@@ -13,7 +13,7 @@ class User(Base):
     updated_time = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     collections = relationship("Collection", back_populates="user")
-    chat_histories = relationship("ChatHistory", back_populates="user")
+    chat_histories = relationship("History", back_populates="user")
 
 class Collection(Base):
     __tablename__ = "collections"
