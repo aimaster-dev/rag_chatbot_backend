@@ -16,13 +16,13 @@ class ChatRequest(BaseModel):
     query: str
     collection_ids: list[int]
 
-router = APIRouter("/chat")
+router = APIRouter(prefix="/chat")
 
 @router.post("/query")
 async def chat_with_bot(request: ChatRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     query = request.query
     collection_ids = request.collection_ids
-    documents = search_documents(CollectionList = collection_ids, query=query)
+    documents = await search_documents(CollectionList = collection_ids, query=query)
     response = ""
     if len(documents) == 0:
         response = os.getenv("DEFAULT_ANSWER")
@@ -40,7 +40,7 @@ async def chat_with_bot(request: ChatRequest, db: Session = Depends(get_db), cur
     return {"user": query, "answer": response}
 
 
-@router.post("/history")
+@router.get("/history")
 def chat_with_bot(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     history = db.query(History).filter(History.user_id == current_user.id).all()
     return [

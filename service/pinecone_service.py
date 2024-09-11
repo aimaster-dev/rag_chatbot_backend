@@ -40,7 +40,7 @@ def index_document(document):
     embeddings = model.encode(paragraphs)
     index_name = f"collection-{document.collection_id}"
     index = pc.Index(index_name)
-    vectors = [{"id": f"paragraph-{i}", "values": embeddings[i].tolist()} for i in range(len(paragraphs))]
+    vectors = [{"id": f"paragraph-{i}", "values": embeddings[i].tolist(), "metadata": {"text": paragraphs[i]}} for i in range(len(paragraphs))]
     index.upsert(
         vectors=vectors,
         namespace=f"document-{document.id}"
@@ -59,17 +59,24 @@ def delete_document(document):
     index.delete(delete_all=True, namespace=f"document-{document.id}")
     print(f"Document {document.id} vectors in Pinecone is deleted.")
 
-def search_documents(CollectionList: list, query: str, threshold: float = 0.75 ):
+async def search_documents(CollectionList: list, query: str, threshold: float = 0.2 ):
     query_embedding = model.encode(query).tolist()
+    # print(query_embedding)
     results = []
     for collection_id in CollectionList:
         index_name = f"collection-{collection_id}"
+        # print(index_name)
         index = pc.Index(index_name)
-        mid_res = index.query(
-            vector=query_embedding,
-            top_k=5,
-            include_metadata=True
-        )
-        mid_results = [match for match in mid_res["matches"] if match["score"] >= threshold]
-        results.append(mid_results)
+        namespaces = list(index.describe_index_stats().get("namespaces", {}).keys())
+        for namespace in namespaces:
+            print(namespace)
+            mid_res = index.query(
+                namespace=namespace,
+                vector=query_embedding,
+                top_k=5,
+                include_metadata=True,
+            )
+            # print(mid_res)
+            results.extend([match for match in mid_res["matches"] if match["score"] >= threshold])
+    print(results)
     return results

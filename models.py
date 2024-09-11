@@ -12,8 +12,8 @@ class User(Base):
     created_time = Column(DateTime(timezone=True), server_default=func.now())
     updated_time = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-    collections = relationship("Collection", back_populates="user")
-    chat_histories = relationship("History", back_populates="user")
+    collections = relationship("Collection", back_populates="user", cascade="all, delete-orphan")
+    chat_histories = relationship("History", back_populates="user", cascade="all, delete-orphan")
 
 class Collection(Base):
     __tablename__ = "collections"
@@ -25,14 +25,14 @@ class Collection(Base):
     updated_time = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     user = relationship("User", back_populates="collections")
-    documents = relationship("Document", back_populates="collection")
+    documents = relationship("Document", back_populates="collection", cascade="all, delete-orphan")
 
 
 class Document(Base):
     __tablename__ = "documents"
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String)
-    content = Column(Text)
+    content = Column(String)
     collection_id = Column(Integer, ForeignKey("collections.id"))
     created_time = Column(DateTime(timezone=True), server_default=func.now())
     updated_time = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
