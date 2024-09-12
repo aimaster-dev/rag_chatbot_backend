@@ -2,3 +2,5 @@
 /test.db
 /.env
 */__pycache__
+__pycache__/
+/model/llama-2-7b-chat-hf

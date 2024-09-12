@@ -1,13 +1,15 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import re
 
-tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-chat-hf")
-model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-chat-hf")
+local_dir = "model/llama-2-7b-chat-hf/"
+
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-chat-hf", cache_dir=local_dir)
+model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-chat-hf", cache_dir=local_dir)
 
 async def generate_response(query: str, documents: list):
     context = ""
     for doc in documents:
-        context += doc["metadata"]["text"] + "\n"
+        context += doc["match"]["metadata"]["text"] + "\n"
     input_text = f"""
     Use the following pieces of information to answer the user's question.
     If you don't know the answer, just say that you don't know, don't try to make up an answer.
@@ -18,7 +20,7 @@ async def generate_response(query: str, documents: list):
     Helpful answer:
     """
     inputs = tokenizer(input_text, return_tensors="pt")
-    outputs = model.generate(**inputs, max_length = 200)
+    outputs = model.generate(**inputs, max_length = 1000)
     response = tokenizer.decode(outputs[0], skip_special_tokens = True)
 
     pattern = r"Helpful answer:\s*(.*)"

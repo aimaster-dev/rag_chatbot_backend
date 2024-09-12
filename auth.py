@@ -13,8 +13,8 @@ auth_router = APIRouter(prefix="/auth")
 
 class Settings(BaseModel):
     authjwt_secret_key: str = "ragchatbot"
-    authjwt_access_token_expires: int = 900
-    authjwt_refresh_token_expires: int = 900
+    authjwt_access_token_expires: int = 3600
+    authjwt_refresh_token_expires: int = 3600
 
 @AuthJWT.load_config
 def get_config():
@@ -64,18 +64,16 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
 def login(request: LoginRequest, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     try:
         user = db.query(User).filter(User.username == request.username).first()
-        if not user or not verify_password(request.password, user.password):
+        if user == None or not verify_password(request.password, user.password):
             raise HTTPException(status_code=401, detail="Invalid username or password")
-        access_token = Authorize.create_access_token(subject=user.username)
-        refresh_token = Authorize.create_refresh_token(subject=user.username)
-        return {"access_token": access_token, "refresh_token": refresh_token, "user": UserResponse.from_orm(user)}
+        else:
+            access_token = Authorize.create_access_token(subject=user.username)
+            refresh_token = Authorize.create_refresh_token(subject=user.username)
+            return {"access_token": access_token, "refresh_token": refresh_token, "user": UserResponse.from_orm(user)}
     except SQLAlchemyError as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error occurred: {str(e)}")
     except HTTPException as e:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"An error occurred during registration: {str(e)}"
-        )
+        raise HTTPException(status_code=401, detail="Invalid username or password")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"An unexpected error occurred: {str(e)}")
 

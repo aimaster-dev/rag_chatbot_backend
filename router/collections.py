@@ -12,9 +12,14 @@ class CreateCollectionRequest(BaseModel):
     name: str
     description: str = None
 
+class UpdateCollectionRequest(BaseModel):
+    collection_id: int
+    name: str
+    description: str = None
+
 class CreateDocumentRequest(BaseModel):
     title: str
-    content: str
+    content:  str
 
 class UpdateDocumentRequest(BaseModel):
     document_id: int
@@ -46,11 +51,23 @@ def create_collection(request: CreateCollectionRequest, db: Session = Depends(ge
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An unexpected error occurred: {str(e)}"
         )
-    
+
+@router.post("/update")
+def updating_document(request: UpdateCollectionRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    collection = db.query(Collection).filter(Collection.id == request.collection_id, Collection.user_id == current_user.id).first()
+    if not collection:
+        raise HTTPException(status_code=403, detail="Unauthorized access to collection")
+    collection.name = request.name
+    collection.description = request.description
+    db.commit()
+    db.refresh(collection)
+    return collection
+
 @router.get("/getall")
 def get_collections(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     try:
         collections = db.query(Collection).filter(Collection.user_id == current_user.id).all()
+        collections.reverse()
         return collections
     except SQLAlchemyError as e:
         raise HTTPException(
@@ -79,6 +96,9 @@ def create_document(request: CreateDocumentRequest, collection_id: int, db: Sess
     collection = db.query(Collection).filter(Collection.id == collection_id, Collection.user_id == current_user.id).first()
     if not collection:
         raise HTTPException(status_code=403, detail="Unauthorized access to collection")
+    blank_doc = db.query(Document).filter(Document.content == "UNTITLED", Document.collection_id == collection_id).all()
+    if len(blank_doc) != 0:
+        raise HTTPException(status_code=422, detail="The blank document is already existed in this collection.")
     document = Document(title=request.title, content=request.content, collection_id=collection_id)
     db.add(document)
     db.commit()
@@ -107,6 +127,7 @@ def gettinging_document(collection_id: int, db: Session = Depends(get_db), curre
     if not collection:
         raise HTTPException(status_code=403, detail="Unauthorized access to collection")
     documents = db.query(Document).filter(Document.collection_id == collection_id).all()
+    documents.reverse()
     return documents
 
 @router.get("/{collection_id}/documents/get/{document_id}")

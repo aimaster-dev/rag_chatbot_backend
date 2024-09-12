@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from database import Base, engine
 from auth import auth_router
 from router import collections, chat
+# from router import collections
 from fastapi.middleware.cors import CORSMiddleware
 
 Base.metadata.create_all(bind=engine)
@@ -9,7 +10,7 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 origins = [
-    "http://localhost", 
+    "http://localhost:3000", 
     "http://localhost:3000"
 ]
 

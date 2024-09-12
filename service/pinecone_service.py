@@ -2,6 +2,7 @@ from sentence_transformers import SentenceTransformer
 from pinecone import Pinecone, ServerlessSpec
 import os
 from dotenv import load_dotenv
+import re
 
 load_dotenv()
 
@@ -41,6 +42,7 @@ def index_document(document):
     index_name = f"collection-{document.collection_id}"
     index = pc.Index(index_name)
     vectors = [{"id": f"paragraph-{i}", "values": embeddings[i].tolist(), "metadata": {"text": paragraphs[i]}} for i in range(len(paragraphs))]
+    # print(vectors)
     index.upsert(
         vectors=vectors,
         namespace=f"document-{document.id}"
@@ -59,13 +61,14 @@ def delete_document(document):
     index.delete(delete_all=True, namespace=f"document-{document.id}")
     print(f"Document {document.id} vectors in Pinecone is deleted.")
 
-async def search_documents(CollectionList: list, query: str, threshold: float = 0.2 ):
+async def search_documents(CollectionList: list, query: str, threshold: float = 0.25 ):
     query_embedding = model.encode(query).tolist()
     # print(query_embedding)
     results = []
+    assos_paragraph = []
     for collection_id in CollectionList:
         index_name = f"collection-{collection_id}"
-        # print(index_name)
+        print(collection_id)
         index = pc.Index(index_name)
         namespaces = list(index.describe_index_stats().get("namespaces", {}).keys())
         for namespace in namespaces:
@@ -76,7 +79,8 @@ async def search_documents(CollectionList: list, query: str, threshold: float = 
                 top_k=5,
                 include_metadata=True,
             )
-            # print(mid_res)
-            results.extend([match for match in mid_res["matches"] if match["score"] >= threshold])
-    print(results)
+            print(mid_res)
+            document_id = int(re.findall(r'\d+', namespace)[0])
+            results.extend([{"collection_id": collection_id, "document_id": document_id, "match": match} for match in mid_res["matches"] if match["score"] >= threshold])
+    # print(results)
     return results
