@@ -55,7 +55,7 @@ def chat_with_bot(db: Session = Depends(get_db), current_user: User = Depends(ge
     return [
         {
             "query": record.query,
-            "collections": [{"id": collection_id, "name": db.query(Collection).filter(Collection.id == collection_id).first().name} for collection_id in record.collection_ids],
+            "collections": [collection_id for collection_id in record.collection_ids],
             "bot_response": record.bot_response,
             "created_at": record.created_at
         }
