@@ -22,7 +22,7 @@ router = APIRouter(prefix="/chat")
 async def chat_with_bot(request: ChatRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     query = request.query
     collection_ids = request.collection_ids
-    if collection_ids == [0]:
+    if 0 in collection_ids:
         collections = db.query(Collection).filter(Collection.user_id == current_user.id).all()
         collection_ids = []
         for collection in collections:

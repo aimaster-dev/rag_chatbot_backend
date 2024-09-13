@@ -133,6 +133,7 @@ def gettinging_document(collection_id: int, db: Session = Depends(get_db), curre
 @router.get("/{collection_id}/documents/get/{document_id}")
 def gettinging_document(collection_id: int, document_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     collection = db.query(Collection).filter(Collection.id == collection_id, Collection.user_id == current_user.id).first()
+    print(collection)
     if not collection:
         raise HTTPException(status_code=403, detail="Unauthorized access to collection")
     document = db.query(Document).filter(Document.id == document_id).first()
